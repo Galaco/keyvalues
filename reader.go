@@ -86,6 +86,7 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 			//Create new scope
 			kv := KeyValue{
 				key: strings.Replace(prop[0], CHAR_ESCAPE, "", -1),
+				valueType: ValueArray,
 			}
 
 			scope.value = append(scope.value, kv)
@@ -103,10 +104,11 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 func parseKV(line string) KeyValue {
 	prop := strings.Split(line, CHAR_SEPARATOR)
 	// value also defined on this line
-	val := strings.Replace(line, prop[0] + CHAR_SEPARATOR, "", -1)
+	val := strings.Replace(strings.Replace(line, prop[0] + CHAR_SEPARATOR, "", -1), CHAR_ESCAPE, "", -1)
 
 	return KeyValue{
 		key: prop[0],
-		value: append(make([]interface{}, 0), strings.Replace(val, CHAR_ESCAPE, "", -1)),
+		valueType: getType(val),
+		value: append(make([]interface{}, 0), val),
 	}
 }

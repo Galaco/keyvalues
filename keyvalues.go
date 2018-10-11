@@ -1,5 +1,10 @@
 package keyvalues
 
+import (
+	"strconv"
+	"strings"
+)
+
 type ValueType string
 
 const ValueString = ValueType("string")
@@ -44,12 +49,12 @@ func (node *KeyValue) GetAllValues() *[]interface{} {
 	return &node.value
 }
 
-// Find a value of a key, when the type may not be known
-func (node *KeyValue) FindByKey(key string) interface{} {
+// Find a a keyvalue pair
+func (node *KeyValue) FindByKey(key string) *KeyValue {
 	for _,child := range node.value {
 		n,_ := child.(KeyValue)
 		if n.key == key {
-			return (n.value[0])
+			return &n
 		}
 	}
 	return nil
@@ -108,4 +113,31 @@ func (node *KeyValue) FindArrayByKey(key string) (children []KeyValue) {
 	}
 
 	return children
+}
+
+func getType(val string) ValueType{
+	switch true {
+	case isFloat(val):
+		return ValueFloat
+	case isInt(val):
+		return ValueInt
+	default:
+		return ValueString
+	}
+}
+
+func isInt(val string) bool {
+	if _, err := strconv.Atoi(val); err == nil {
+		return true
+	}
+	return false
+}
+
+func isFloat(val string) bool {
+	if _, err := strconv.Atoi(val); err == nil {
+		if strings.Contains(val, ".") {
+			return true
+		}
+	}
+	return false
 }
