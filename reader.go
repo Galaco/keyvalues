@@ -1,9 +1,9 @@
 package keyvalues
 
 import (
-	"strings"
 	"bufio"
 	"io"
+	"strings"
 )
 
 const CHAR_ENTER_SCOPE = "{"
@@ -37,7 +37,7 @@ func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 
 	readScope(bufReader, &rootNode)
 
-	return rootNode,err
+	return rootNode, err
 }
 
 // Read a single scope
@@ -46,7 +46,7 @@ func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 // Param: scope is the current scope to write to
 func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 	for {
-		line,err := reader.ReadString('\n')
+		line, err := reader.ReadString('\n')
 		if err == io.EOF {
 			break
 		}
@@ -62,12 +62,11 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 			continue
 		}
 
-
 		// New scopez
 		if strings.Contains(line, CHAR_ENTER_SCOPE) {
 			// Scope is opened when the key is read
 			// There may be situations where there is no key, so we must account for that
-			subScope := scope.value[len(scope.value) - 1].(KeyValue)
+			subScope := scope.value[len(scope.value)-1].(KeyValue)
 			scope.value = append(scope.value[:len(scope.value)-1], *readScope(reader, &subScope))
 			continue
 		}
@@ -85,14 +84,13 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		if len(prop) == 1 {
 			//Create new scope
 			kv := KeyValue{
-				key: strings.Replace(prop[0], CHAR_ESCAPE, "", -1),
+				key:       strings.Replace(prop[0], CHAR_ESCAPE, "", -1),
 				valueType: ValueArray,
 			}
 
 			scope.value = append(scope.value, kv)
 			continue
 		}
-
 
 		// Read keyvalue & append to current scope
 		scope.value = append(scope.value, parseKV(line))
@@ -104,11 +102,11 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 func parseKV(line string) KeyValue {
 	prop := strings.Split(line, CHAR_SEPARATOR)
 	// value also defined on this line
-	val := strings.Replace(strings.Replace(line, prop[0] + CHAR_SEPARATOR, "", -1), CHAR_ESCAPE, "", -1)
+	val := strings.Replace(strings.Replace(line, prop[0]+CHAR_SEPARATOR, "", -1), CHAR_ESCAPE, "", -1)
 
 	return KeyValue{
-		key: prop[0],
+		key:       prop[0],
 		valueType: getType(val),
-		value: append(make([]interface{}, 0), val),
+		value:     append(make([]interface{}, 0), val),
 	}
 }
