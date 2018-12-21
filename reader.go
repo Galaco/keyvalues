@@ -66,8 +66,8 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		if strings.Contains(line, CHAR_ENTER_SCOPE) {
 			// Scope is opened when the key is read
 			// There may be situations where there is no key, so we must account for that
-			subScope := scope.value[len(scope.value)-1].(KeyValue)
-			scope.value = append(scope.value[:len(scope.value)-1], *readScope(reader, &subScope))
+			subScope := scope.value[len(scope.value)-1].(*KeyValue)
+			scope.value = append(scope.value[:len(scope.value)-1], readScope(reader, subScope))
 			continue
 		}
 
@@ -83,7 +83,7 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		// This *SHOULD* mean key has children
 		if len(prop) == 1 {
 			//Create new scope
-			kv := KeyValue{
+			kv := &KeyValue{
 				key:       strings.Replace(prop[0], CHAR_ESCAPE, "", -1),
 				valueType: ValueArray,
 			}
