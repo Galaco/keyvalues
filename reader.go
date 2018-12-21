@@ -99,12 +99,12 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 	return scope
 }
 
-func parseKV(line string) KeyValue {
+func parseKV(line string) *KeyValue {
 	prop := strings.Split(line, CHAR_SEPARATOR)
 	// value also defined on this line
 	val := strings.Replace(strings.Replace(line, prop[0]+CHAR_SEPARATOR, "", -1), CHAR_ESCAPE, "", -1)
 
-	return KeyValue{
+	return &KeyValue{
 		key:       prop[0],
 		valueType: getType(val),
 		value:     append(make([]interface{}, 0), val),
