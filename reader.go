@@ -69,7 +69,7 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		}
 
 		// New scope
-		if strings.Contains(line, tokenEnterScope) {
+		if strings.Contains(line, tokenEnterScope) && !isCharacterEscaped(line, tokenEnterScope) {
 			// Scope is opened when the key is read
 			// There may be situations where there is no key, so we must account for that
 			subScope := scope.value[len(scope.value)-1].(*KeyValue)
@@ -116,4 +116,8 @@ func parseKV(line string) *KeyValue {
 		valueType: getType(val),
 		value:     append(make([]interface{}, 0), val),
 	}
+}
+
+func isCharacterEscaped(value string, char string) bool {
+	return strings.LastIndex(value, tokenEscape) >= strings.LastIndex(value, char)
 }
