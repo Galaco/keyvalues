@@ -1,2 +1,8 @@
 
 \.idea/
+
+examples/gameinfo/gameinfo\.txt
+
+*.vmf
+
+*.vmt

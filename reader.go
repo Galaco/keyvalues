@@ -6,20 +6,23 @@ import (
 	"strings"
 )
 
-const CHAR_ENTER_SCOPE = "{"
-const CHAR_EXIT_SCOPE = "}"
-const CHAR_ESCAPE = "\""
-const CHAR_DISCARD_CUTSET = "\t \r\n"
-const CHAR_SEPARATOR = " "
-const CHAR_TAB = "\t"
-const CHAR_COMMENT = "//"
-const NODE_KEY_ROOT = "$root"
+const tokenEnterScope = "{"
+const tokenExitScope = "}"
+const tokenEscape = "\""
+const tokenDiscardCutset = "\t \r\n"
+const tokenSeparator = " "
+const tokenTab = "\t"
+const tokenComment = "//"
+const tokenRootNodeKey = "$root"
 
+// Reader is used for parsing a KeyValue format stream
+// There are various KeyValue based formats (vmt, vmf, gameinfo.txt etc.)
+// This should be able to parse all of them.
 type Reader struct {
 	file io.Reader
 }
 
-// Return a new Vmf Reader
+// NewReader Return a new Vmf Reader
 func NewReader(file io.Reader) Reader {
 	reader := Reader{}
 	reader.file = file
@@ -28,11 +31,14 @@ func NewReader(file io.Reader) Reader {
 
 // Read buffer file into our defined structures
 // Returns a fully mapped Vmf structure
+// Every root KeyValue is contained in a predefined root node, due to spec lacking clarity
+// about the number of valid root nodes. This assumes there can be more than 1
 func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 	bufReader := bufio.NewReader(reader.file)
 
 	rootNode := KeyValue{
-		key: NODE_KEY_ROOT,
+		key:       tokenRootNodeKey,
+		valueType: ValueArray,
 	}
 
 	readScope(bufReader, &rootNode)
@@ -40,7 +46,7 @@ func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 	return rootNode, err
 }
 
-// Read a single scope
+// readScope Reads a single scope
 // Constructs a KeyValue node tree for a single scope
 // Recursively parses all child scopes too
 // Param: scope is the current scope to write to
@@ -52,18 +58,18 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		}
 
 		// Remove any comments
-		line = strings.Split(line, CHAR_COMMENT)[0]
+		line = strings.Split(line, tokenComment)[0]
 		// trim padding
-		line = strings.Trim(line, CHAR_DISCARD_CUTSET)
+		line = strings.Trim(line, tokenDiscardCutset)
 		// Simplify parsing the line
-		line = strings.Replace(line, CHAR_TAB, CHAR_SEPARATOR, -1)
+		line = strings.Replace(line, tokenTab, tokenSeparator, -1)
 
 		if len(line) == 0 {
 			continue
 		}
 
-		// New scopez
-		if strings.Contains(line, CHAR_ENTER_SCOPE) {
+		// New scope
+		if strings.Contains(line, tokenEnterScope) {
 			// Scope is opened when the key is read
 			// There may be situations where there is no key, so we must account for that
 			subScope := scope.value[len(scope.value)-1].(*KeyValue)
@@ -72,19 +78,19 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		}
 
 		// Exit scope
-		if strings.Contains(line, CHAR_EXIT_SCOPE) {
+		if strings.Contains(line, tokenExitScope) {
 			break
 		}
 
 		// Read scope
-		prop := strings.Split(line, CHAR_SEPARATOR)
+		prop := strings.Split(line, tokenSeparator)
 
 		// Only the key is defined here
 		// This *SHOULD* mean key has children
 		if len(prop) == 1 {
 			//Create new scope
 			kv := &KeyValue{
-				key:       strings.Replace(prop[0], CHAR_ESCAPE, "", -1),
+				key:       strings.Trim(prop[0], tokenEscape),
 				valueType: ValueArray,
 			}
 
@@ -99,13 +105,14 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 	return scope
 }
 
+// parseKV reads a single line that should contain a KeyValue pair
 func parseKV(line string) *KeyValue {
-	prop := strings.Split(line, CHAR_SEPARATOR)
+	prop := strings.Split(line, tokenSeparator)
 	// value also defined on this line
-	val := strings.Replace(strings.Replace(line, prop[0]+CHAR_SEPARATOR, "", -1), CHAR_ESCAPE, "", -1)
+	val := strings.Trim(strings.Replace(line, prop[0]+tokenSeparator, "", -1), tokenEscape)
 
 	return &KeyValue{
-		key:       prop[0],
+		key:       strings.Trim(prop[0], tokenEscape),
 		valueType: getType(val),
 		value:     append(make([]interface{}, 0), val),
 	}
