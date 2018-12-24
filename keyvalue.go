@@ -10,6 +10,7 @@ type KeyValue struct {
 	key       string
 	valueType ValueType
 	value     []interface{}
+	parent *KeyValue
 }
 
 // key is the identifier for a stored value
@@ -108,6 +109,78 @@ func (node *KeyValue) AddChild(value *KeyValue) error {
 	if !node.HasChildren() {
 		return errors.New("parent does not accept child keys")
 	}
+	value.parent = node
 	node.value = append(node.value, value)
 	return nil
+}
+
+// Parent returns this node's parent.
+// Parent can be nil
+func (node *KeyValue) Parent() *KeyValue {
+	return node.parent
+}
+
+// MergeInto merges this KeyValue tree into another.
+// The resultant tree will contain all nodes in the same tree from both
+// this and the target.
+// In the case where a key exists in both trees, this key's value will
+// replace the parent's value
+func (node *KeyValue) MergeInto(parent *KeyValue) (merged KeyValue, err error) {
+	merged = *parent
+	if node.Key() != merged.Key() {
+		return merged,errors.New("cannot merge mismatched root nodes")
+	}
+
+	err = recursiveMerge(node, &merged)
+
+	return merged,err
+}
+
+// recursiveMerge merge a into b
+// if a.Key() == b.Key(), a will replace b
+func recursiveMerge(a *KeyValue, b *KeyValue) (err error) {
+	// Bottem level node on parent tree
+	if b.HasChildren() == false {
+		// only option is to replace b with a, and types must match
+		if a.Key() != b.Key() {
+			return errors.New("mismatched types on keyvalue")
+		}
+		b.valueType = a.valueType
+		b.value = a.value
+		return nil
+	}
+	// a has a new key to add to b
+	if a.Key() != b.Key() {
+		err = b.parent.AddChild(a)
+		return err
+	}
+
+	// a and b have the same key, and b has children
+	// a and b must be of the same types for matching keys
+	if a.HasChildren() == false {
+		return errors.New("mismatched types for keyvalue")
+	}
+
+	// see if every child of A appears in B
+	children,err := a.Children()
+	if err != nil {
+		return err
+	}
+	for idx,child := range children {
+		childB,err := b.Find(child.Key())
+		// a is not in B
+		if err != nil {
+			err = b.AddChild(children[idx])
+			if err != nil {
+				return err
+			}
+		} else {
+			err = recursiveMerge(children[idx], childB)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return err
 }

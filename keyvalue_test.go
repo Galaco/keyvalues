@@ -1,6 +1,9 @@
 package keyvalues
 
-import "testing"
+import (
+	"log"
+	"testing"
+)
 
 func TestKeyValue_Key(t *testing.T) {
 	key := "foo"
@@ -158,5 +161,86 @@ func TestKeyValue_AsFloat(t *testing.T) {
 		} else {
 			t.Error("returned value type does not match expected")
 		}
+	}
+}
+
+func TestKeyValue_MergeInto(t *testing.T) {
+	a := &KeyValue{
+		key: "foo",
+		valueType: ValueArray,
+		value: []interface{}{
+			&KeyValue{
+				key: "bar",
+				valueType: ValueString,
+				value: []interface{}{
+					"bar",
+				},
+			},
+			&KeyValue{
+				key: "baz",
+				valueType: ValueString,
+				value: []interface{}{
+					"baz",
+				},
+			},
+			&KeyValue{
+				key: "bat",
+				valueType: ValueString,
+				value: []interface{}{
+					"bat",
+				},
+			},
+		},
+	}
+	b := &KeyValue{
+		key: "foo",
+		valueType: ValueArray,
+		value: []interface{}{
+			&KeyValue{
+				key: "bar",
+				valueType: ValueString,
+				value: []interface{}{
+					"cart",
+				},
+			},
+			&KeyValue{
+				key: "egg",
+				valueType: ValueString,
+				value: []interface{}{
+					"bat",
+				},
+			},
+		},
+	}
+
+	result,err := a.MergeInto(b)
+	if err != nil {
+		t.Error(err)
+	}
+	log.Println(result.Children())
+
+	actual,err := result.Find("bar")
+	if actual == nil {
+		t.Error(err)
+	}
+	actualVal,err := actual.AsString()
+	if actualVal != "bar" {
+		if actualVal == "cart" {
+			t.Error("keyvalue was not overwritten during merge")
+		} else {
+			t.Errorf("unexpected value for associated key. expected bar, received: %s", actualVal)
+		}
+	}
+	actual,err = result.Find("baz")
+	if actual == nil {
+		t.Error(err)
+	}
+	actual,err = result.Find("bat")
+	if actual == nil {
+		t.Error(err)
+	}
+	actual,err = result.Find("egg")
+	if actual == nil {
+		t.Error(err)
 	}
 }

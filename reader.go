@@ -39,6 +39,7 @@ func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 	rootNode := KeyValue{
 		key:       tokenRootNodeKey,
 		valueType: ValueArray,
+		parent: nil,
 	}
 
 	readScope(bufReader, &rootNode)
@@ -92,6 +93,7 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 			kv := &KeyValue{
 				key:       strings.Trim(prop[0], tokenEscape),
 				valueType: ValueArray,
+				parent:    scope,
 			}
 
 			scope.value = append(scope.value, kv)
@@ -99,7 +101,9 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		}
 
 		// Read keyvalue & append to current scope
-		scope.value = append(scope.value, parseKV(line))
+		result := parseKV(line)
+		result.parent = scope
+		scope.value = append(scope.value, result)
 	}
 
 	return scope
