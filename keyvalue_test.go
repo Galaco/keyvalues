@@ -1,7 +1,6 @@
 package keyvalues
 
 import (
-	"log"
 	"testing"
 )
 
@@ -217,7 +216,6 @@ func TestKeyValue_MergeInto(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	log.Println(result.Children())
 
 	actual,err := result.Find("bar")
 	if actual == nil {

@@ -91,7 +91,7 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		if len(prop) == 1 {
 			//Create new scope
 			kv := &KeyValue{
-				key:       strings.Trim(prop[0], tokenEscape),
+				key:       trim(prop[0]),
 				valueType: ValueArray,
 				parent:    scope,
 			}
@@ -113,10 +113,10 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 func parseKV(line string) *KeyValue {
 	prop := strings.Split(line, tokenSeparator)
 	// value also defined on this line
-	val := strings.Trim(strings.Replace(line, prop[0]+tokenSeparator, "", -1), tokenEscape)
+	val := trim(strings.Replace(line, prop[0], "", -1))
 
 	return &KeyValue{
-		key:       strings.Trim(prop[0], tokenEscape),
+		key:       trim(prop[0]),
 		valueType: getType(val),
 		value:     append(make([]interface{}, 0), val),
 	}
@@ -124,4 +124,8 @@ func parseKV(line string) *KeyValue {
 
 func isCharacterEscaped(value string, char string) bool {
 	return strings.LastIndex(value, tokenEscape) >= strings.LastIndex(value, char)
+}
+
+func trim(value string) string {
+	return strings.Trim(strings.TrimSpace(value), tokenEscape)
 }
