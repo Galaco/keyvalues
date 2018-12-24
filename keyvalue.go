@@ -116,6 +116,23 @@ func (node *KeyValue) AddChild(value *KeyValue) error {
 	return nil
 }
 
+func (node *KeyValue) RemoveChild(key string) error {
+	if !node.HasChildren() {
+		return errors.New("parent does not accept child keys")
+	}
+	ret,err := node.Find(key)
+	if err != nil {
+		return errors.New("key does not exist")
+	}
+	for idx,c := range node.value {
+		if c == ret {
+			node.value = append(node.value[:idx], node.value[idx+1:]...)
+			return nil
+		}
+	}
+	return nil
+}
+
 // Parent returns this node's parent.
 // Parent can be nil
 func (node *KeyValue) Parent() *KeyValue {

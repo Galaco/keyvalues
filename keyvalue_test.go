@@ -242,3 +242,73 @@ func TestKeyValue_MergeInto(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+
+func TestKeyValue_RemoveChild(t *testing.T) {
+	a := &KeyValue{
+		key: "foo",
+		valueType: ValueArray,
+		value: []interface{}{
+			&KeyValue{
+				key: "bar",
+				valueType: ValueString,
+				value: []interface{}{
+					"bar",
+				},
+			},
+			&KeyValue{
+				key: "baz",
+				valueType: ValueString,
+				value: []interface{}{
+					"baz",
+				},
+			},
+			&KeyValue{
+				key: "bat",
+				valueType: ValueString,
+				value: []interface{}{
+					"bat",
+				},
+			},
+		},
+	}
+	b := &KeyValue{
+		key: "foo",
+		valueType: ValueArray,
+		value: []interface{}{
+			&KeyValue{
+				key: "bar",
+				valueType: ValueString,
+				value: []interface{}{
+					"cart",
+				},
+			},
+			&KeyValue{
+				key: "egg",
+				valueType: ValueString,
+				value: []interface{}{
+					"bat",
+				},
+			},
+		},
+	}
+
+	result,err := a.MergeInto(b)
+	if err != nil {
+		t.Error(err)
+	}
+
+	actual,err := result.Find("bar")
+	if actual == nil {
+		t.Error(err)
+	}
+	err = result.RemoveChild("bar")
+	if err != nil {
+		t.Error(err)
+	}
+	actual,err = result.Find("bar")
+	if actual != nil {
+		t.Error("found key that should have been removed")
+	}
+
+}
