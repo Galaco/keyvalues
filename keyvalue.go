@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+const reservedKeyPatch = "patch"
+
 // A KeyValue object, that may hold multiple Values
 type KeyValue struct {
 	key       string
@@ -128,7 +130,13 @@ func (node *KeyValue) Parent() *KeyValue {
 func (node *KeyValue) MergeInto(parent *KeyValue) (merged KeyValue, err error) {
 	merged = *parent
 	if node.Key() != merged.Key() {
-		return merged,errors.New("cannot merge mismatched root nodes")
+		// "patch" is a special key that can appear at the root of a keyvalue
+		// it does what it sounds like, its ony real purpose is to patch another tree
+		// with its own values
+		if node.Key() != reservedKeyPatch || node.Parent() == nil || node.Parent().Key() != tokenRootNodeKey {
+			return merged,errors.New("cannot merge mismatched root nodes")
+		}
+		node.key = merged.Key()
 	}
 
 	err = recursiveMerge(node, &merged)
