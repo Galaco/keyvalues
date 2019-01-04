@@ -6,6 +6,7 @@ import (
 )
 
 const reservedKeyPatch = "patch"
+const reservedKeyReplace = "replace"
 
 // A KeyValue object, that may hold multiple Values
 type KeyValue struct {
@@ -139,12 +140,7 @@ func (node *KeyValue) Parent() *KeyValue {
 	return node.parent
 }
 
-// MergeInto merges this KeyValue tree into another.
-// The resultant tree will contain all nodes in the same tree from both
-// this and the target.
-// In the case where a key exists in both trees, this key's value will
-// replace the parent's value
-func (node *KeyValue) MergeInto(parent *KeyValue) (merged KeyValue, err error) {
+func (node *KeyValue) Patch(parent *KeyValue) (merged KeyValue, err error) {
 	merged = *parent
 	if node.Key() != merged.Key() {
 		// "patch" is a special key that can appear at the root of a keyvalue
@@ -156,19 +152,45 @@ func (node *KeyValue) MergeInto(parent *KeyValue) (merged KeyValue, err error) {
 		node.key = merged.Key()
 	}
 
-	err = recursiveMerge(node, &merged)
+	err = recursiveMerge(node, &merged, false)
+
+	return merged,err
+}
+
+// MergeInto merges this KeyValue tree into another.
+// The resultant tree will contain all nodes in the same tree from both
+// this and the target.
+// In the case where a key exists in both trees, this key's value will
+// replace the parent's value
+func (node *KeyValue) Replace(parent *KeyValue) (merged KeyValue, err error) {
+	merged = *parent
+	if node.Key() != merged.Key() {
+		// "replace" is a special key that can appear at the root of a keyvalue
+		// it does what it sounds like, its ony real purpose is to replace another tree's values
+		// with its own values if found, else add them.
+		if node.Key() != reservedKeyReplace || node.Parent() == nil || node.Parent().Key() != tokenRootNodeKey {
+			return merged,errors.New("cannot merge mismatched root nodes")
+		}
+		node.key = merged.Key()
+	}
+
+	err = recursiveMerge(node, &merged, true)
 
 	return merged,err
 }
 
 // recursiveMerge merge a into b
-// if a.Key() == b.Key(), a will replace b
-func recursiveMerge(a *KeyValue, b *KeyValue) (err error) {
+// if a.Key() == b.Key() && shouldReplace, a will replace b unless they have children, then
+// recurse downwards.
+func recursiveMerge(a *KeyValue, b *KeyValue, shouldReplace bool) (err error) {
 	// Bottem level node on parent tree
 	if b.HasChildren() == false {
 		// only option is to replace b with a, and types must match
 		if a.Key() != b.Key() {
 			return errors.New("mismatched types on keyvalue")
+		}
+		if shouldReplace == false {
+			return nil
 		}
 		b.valueType = a.valueType
 		b.value = a.value
@@ -200,7 +222,7 @@ func recursiveMerge(a *KeyValue, b *KeyValue) (err error) {
 				return err
 			}
 		} else {
-			err = recursiveMerge(children[idx], childB)
+			err = recursiveMerge(children[idx], childB, shouldReplace)
 			if err != nil {
 				return err
 			}

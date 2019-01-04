@@ -165,7 +165,7 @@ func TestKeyValue_AsFloat(t *testing.T) {
 
 func TestKeyValue_MergeInto(t *testing.T) {
 	a := &KeyValue{
-		key: "foo",
+		key: "replace",
 		valueType: ValueArray,
 		value: []interface{}{
 			&KeyValue{
@@ -212,7 +212,7 @@ func TestKeyValue_MergeInto(t *testing.T) {
 		},
 	}
 
-	result,err := a.MergeInto(b)
+	result,err := a.Replace(b)
 	if err != nil {
 		t.Error(err)
 	}
@@ -246,7 +246,7 @@ func TestKeyValue_MergeInto(t *testing.T) {
 
 func TestKeyValue_RemoveChild(t *testing.T) {
 	a := &KeyValue{
-		key: "foo",
+		key: "replace",
 		valueType: ValueArray,
 		value: []interface{}{
 			&KeyValue{
@@ -293,7 +293,7 @@ func TestKeyValue_RemoveChild(t *testing.T) {
 		},
 	}
 
-	result,err := a.MergeInto(b)
+	result,err := a.Replace(b)
 	if err != nil {
 		t.Error(err)
 	}
