@@ -13,7 +13,7 @@ type KeyValue struct {
 	key       string
 	valueType ValueType
 	value     []interface{}
-	parent *KeyValue
+	parent    *KeyValue
 }
 
 // key is the identifier for a stored value
@@ -122,11 +122,11 @@ func (node *KeyValue) RemoveChild(key string) error {
 	if !node.HasChildren() {
 		return errors.New("parent does not accept child keys")
 	}
-	ret,err := node.Find(key)
+	ret, err := node.Find(key)
 	if err != nil {
 		return errors.New("key does not exist")
 	}
-	for idx,c := range node.value {
+	for idx, c := range node.value {
 		if c == ret {
 			node.value = append(node.value[:idx], node.value[idx+1:]...)
 			return nil
@@ -148,15 +148,15 @@ func (node *KeyValue) Patch(parent *KeyValue) (merged KeyValue, err error) {
 		// "patch" is a special key that can appear at the root of a keyvalue
 		// it does what it sounds like, its ony real purpose is to patch another tree
 		// with its own values
-		if node.Key() != reservedKeyPatch || node.Parent() == nil || node.Parent().Key() != tokenRootNodeKey {
-			return merged,errors.New("cannot merge mismatched root nodes")
+		if node.Key() != reservedKeyPatch {
+			return merged, errors.New("cannot merge mismatched root nodes")
 		}
 		node.key = merged.Key()
 	}
 
 	err = recursiveMerge(node, &merged, false)
 
-	return merged,err
+	return merged, err
 }
 
 // Replace merges this KeyValue tree into another.
@@ -170,15 +170,15 @@ func (node *KeyValue) Replace(parent *KeyValue) (merged KeyValue, err error) {
 		// "replace" is a special key that can appear at the root of a keyvalue
 		// it does what it sounds like, its ony real purpose is to replace another tree's values
 		// with its own values if found, else add them.
-		if node.Key() != reservedKeyReplace || node.Parent() == nil || node.Parent().Key() != tokenRootNodeKey {
-			return merged,errors.New("cannot merge mismatched root nodes")
+		if node.Key() != reservedKeyReplace {
+			return merged, errors.New("cannot merge mismatched root nodes")
 		}
 		node.key = merged.Key()
 	}
 
 	err = recursiveMerge(node, &merged, true)
 
-	return merged,err
+	return merged, err
 }
 
 // recursiveMerge merge a into b
@@ -211,12 +211,12 @@ func recursiveMerge(a *KeyValue, b *KeyValue, shouldReplace bool) (err error) {
 	}
 
 	// see if every child of A appears in B
-	children,err := a.Children()
+	children, err := a.Children()
 	if err != nil {
 		return err
 	}
-	for idx,child := range children {
-		childB,err := b.Find(child.Key())
+	for idx, child := range children {
+		childB, err := b.Find(child.Key())
 		// a is not in B
 		if err != nil {
 			err = b.AddChild(children[idx])

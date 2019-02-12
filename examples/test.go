@@ -42,14 +42,14 @@ func GameInfo() {
 
 func read(basePath string, fileInfos []os.FileInfo, callback func(filename string, value *keyvalues.KeyValue)) {
 	for _, info := range fileInfos {
-		f,err := os.Open(basePath + info.Name())
+		f, err := os.Open(basePath + info.Name())
 		if err != nil {
 			log.Fatal(err)
 		}
 		reader := keyvalues.NewReader(f)
-		kv,err := reader.Read()
+		kv, err := reader.Read()
 
-		callback(basePath + info.Name(), &kv)
+		callback(basePath+info.Name(), &kv)
 
 		f.Close()
 	}

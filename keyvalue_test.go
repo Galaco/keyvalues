@@ -165,25 +165,25 @@ func TestKeyValue_AsFloat(t *testing.T) {
 
 func TestKeyValue_MergeInto(t *testing.T) {
 	a := &KeyValue{
-		key: "replace",
+		key:       "replace",
 		valueType: ValueArray,
 		value: []interface{}{
 			&KeyValue{
-				key: "bar",
+				key:       "bar",
 				valueType: ValueString,
 				value: []interface{}{
 					"bar",
 				},
 			},
 			&KeyValue{
-				key: "baz",
+				key:       "baz",
 				valueType: ValueString,
 				value: []interface{}{
 					"baz",
 				},
 			},
 			&KeyValue{
-				key: "bat",
+				key:       "bat",
 				valueType: ValueString,
 				value: []interface{}{
 					"bat",
@@ -192,18 +192,18 @@ func TestKeyValue_MergeInto(t *testing.T) {
 		},
 	}
 	b := &KeyValue{
-		key: "foo",
+		key:       "foo",
 		valueType: ValueArray,
 		value: []interface{}{
 			&KeyValue{
-				key: "bar",
+				key:       "bar",
 				valueType: ValueString,
 				value: []interface{}{
 					"cart",
 				},
 			},
 			&KeyValue{
-				key: "egg",
+				key:       "egg",
 				valueType: ValueString,
 				value: []interface{}{
 					"bat",
@@ -212,16 +212,16 @@ func TestKeyValue_MergeInto(t *testing.T) {
 		},
 	}
 
-	result,err := a.Replace(b)
+	result, err := a.Replace(b)
 	if err != nil {
 		t.Error(err)
 	}
 
-	actual,err := result.Find("bar")
+	actual, err := result.Find("bar")
 	if actual == nil {
 		t.Error(err)
 	}
-	actualVal,err := actual.AsString()
+	actualVal, err := actual.AsString()
 	if err != nil {
 		t.Error(err)
 	}
@@ -232,42 +232,41 @@ func TestKeyValue_MergeInto(t *testing.T) {
 			t.Errorf("unexpected value for associated key. expected bar, received: %s", actualVal)
 		}
 	}
-	actual,err = result.Find("baz")
+	actual, err = result.Find("baz")
 	if actual == nil {
 		t.Error(err)
 	}
-	actual,err = result.Find("bat")
+	actual, err = result.Find("bat")
 	if actual == nil {
 		t.Error(err)
 	}
-	actual,err = result.Find("egg")
+	actual, err = result.Find("egg")
 	if actual == nil {
 		t.Error(err)
 	}
 }
 
-
 func TestKeyValue_RemoveChild(t *testing.T) {
 	a := &KeyValue{
-		key: "replace",
+		key:       "replace",
 		valueType: ValueArray,
 		value: []interface{}{
 			&KeyValue{
-				key: "bar",
+				key:       "bar",
 				valueType: ValueString,
 				value: []interface{}{
 					"bar",
 				},
 			},
 			&KeyValue{
-				key: "baz",
+				key:       "baz",
 				valueType: ValueString,
 				value: []interface{}{
 					"baz",
 				},
 			},
 			&KeyValue{
-				key: "bat",
+				key:       "bat",
 				valueType: ValueString,
 				value: []interface{}{
 					"bat",
@@ -276,18 +275,18 @@ func TestKeyValue_RemoveChild(t *testing.T) {
 		},
 	}
 	b := &KeyValue{
-		key: "foo",
+		key:       "foo",
 		valueType: ValueArray,
 		value: []interface{}{
 			&KeyValue{
-				key: "bar",
+				key:       "bar",
 				valueType: ValueString,
 				value: []interface{}{
 					"cart",
 				},
 			},
 			&KeyValue{
-				key: "egg",
+				key:       "egg",
 				valueType: ValueString,
 				value: []interface{}{
 					"bat",
@@ -296,12 +295,12 @@ func TestKeyValue_RemoveChild(t *testing.T) {
 		},
 	}
 
-	result,err := a.Replace(b)
+	result, err := a.Replace(b)
 	if err != nil {
 		t.Error(err)
 	}
 
-	actual,err := result.Find("bar")
+	actual, err := result.Find("bar")
 	if err != nil {
 		t.Error(err)
 	}
@@ -312,9 +311,9 @@ func TestKeyValue_RemoveChild(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	actual,err = result.Find("bar")
-	if err != nil {
-		t.Error(err)
+	actual, err = result.Find("bar")
+	if err == nil {
+		t.Error("expected error, but received none")
 	}
 	if actual != nil {
 		t.Error("found key that should have been removed")

@@ -39,7 +39,7 @@ func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 	rootNode := KeyValue{
 		key:       tokenRootNodeKey,
 		valueType: ValueArray,
-		parent: nil,
+		parent:    nil,
 	}
 
 	readScope(bufReader, &rootNode)
