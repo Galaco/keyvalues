@@ -8,7 +8,7 @@ import (
 const reservedKeyPatch = "patch"
 const reservedKeyReplace = "replace"
 
-// A KeyValue object, that may hold multiple Values
+// KeyValue object, that may hold multiple Values
 type KeyValue struct {
 	key       string
 	valueType ValueType
@@ -117,6 +117,7 @@ func (node *KeyValue) AddChild(value *KeyValue) error {
 	return nil
 }
 
+// RemoveChild removes a KeyValue from a parent value
 func (node *KeyValue) RemoveChild(key string) error {
 	if !node.HasChildren() {
 		return errors.New("parent does not accept child keys")
@@ -140,6 +141,7 @@ func (node *KeyValue) Parent() *KeyValue {
 	return node.parent
 }
 
+// Patch merges this KeyValue tree into another, adding KeyValues that don't exist in the parent.
 func (node *KeyValue) Patch(parent *KeyValue) (merged KeyValue, err error) {
 	merged = *parent
 	if node.Key() != merged.Key() {
@@ -157,7 +159,7 @@ func (node *KeyValue) Patch(parent *KeyValue) (merged KeyValue, err error) {
 	return merged,err
 }
 
-// MergeInto merges this KeyValue tree into another.
+// Replace merges this KeyValue tree into another.
 // The resultant tree will contain all nodes in the same tree from both
 // this and the target.
 // In the case where a key exists in both trees, this key's value will
@@ -183,13 +185,13 @@ func (node *KeyValue) Replace(parent *KeyValue) (merged KeyValue, err error) {
 // if a.Key() == b.Key() && shouldReplace, a will replace b unless they have children, then
 // recurse downwards.
 func recursiveMerge(a *KeyValue, b *KeyValue, shouldReplace bool) (err error) {
-	// Bottem level node on parent tree
-	if b.HasChildren() == false {
+	// Bottom level node on parent tree
+	if !b.HasChildren() {
 		// only option is to replace b with a, and types must match
 		if a.Key() != b.Key() {
 			return errors.New("mismatched types on keyvalue")
 		}
-		if shouldReplace == false {
+		if !shouldReplace {
 			return nil
 		}
 		b.valueType = a.valueType
@@ -204,7 +206,7 @@ func recursiveMerge(a *KeyValue, b *KeyValue, shouldReplace bool) (err error) {
 
 	// a and b have the same key, and b has children
 	// a and b must be of the same types for matching keys
-	if a.HasChildren() == false {
+	if !a.HasChildren() {
 		return errors.New("mismatched types for keyvalue")
 	}
 

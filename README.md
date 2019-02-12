@@ -1,5 +1,6 @@
 [![GoDoc](https://godoc.org/github.com/Galaco/KeyValues?status.svg)](https://godoc.org/github.com/Galaco/KeyValues)
 [![Go report card](https://goreportcard.com/badge/github.com/galaco/KeyValues)](https://goreportcard.com/badge/github.com/galaco/KeyValues)
+[![Build Status](https://travis-ci.com/Galaco/keyvalues.svg?branch=master)](https://travis-ci.com/Galaco/keyvalues)
 
 # keyvalues
 Go library for parsing Valve keyvalue format files. This library constructs a simple kv node tree that you can

@@ -222,6 +222,9 @@ func TestKeyValue_MergeInto(t *testing.T) {
 		t.Error(err)
 	}
 	actualVal,err := actual.AsString()
+	if err != nil {
+		t.Error(err)
+	}
 	if actualVal != "bar" {
 		if actualVal == "cart" {
 			t.Error("keyvalue was not overwritten during merge")
@@ -299,6 +302,9 @@ func TestKeyValue_RemoveChild(t *testing.T) {
 	}
 
 	actual,err := result.Find("bar")
+	if err != nil {
+		t.Error(err)
+	}
 	if actual == nil {
 		t.Error(err)
 	}
@@ -307,6 +313,9 @@ func TestKeyValue_RemoveChild(t *testing.T) {
 		t.Error(err)
 	}
 	actual,err = result.Find("bar")
+	if err != nil {
+		t.Error(err)
+	}
 	if actual != nil {
 		t.Error("found key that should have been removed")
 	}
