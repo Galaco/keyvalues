@@ -2,6 +2,7 @@ package keyvalues
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -95,7 +96,8 @@ func (node *KeyValue) AsInt() (int32, error) {
 	if node.valueType != ValueInt {
 		return -1, errors.New("value is not of type integer")
 	}
-	return (node.value[0]).(int32), nil
+	val, err := strconv.ParseInt(node.value[0].(string), 10, 32)
+	return int32(val), err
 }
 
 // AsFloat returns value as an int32, assuming it is of float type
@@ -103,7 +105,8 @@ func (node *KeyValue) AsFloat() (float32, error) {
 	if node.valueType != ValueFloat {
 		return -1, errors.New("value is not of type float")
 	}
-	return (node.value[0]).(float32), nil
+	val, err := strconv.ParseFloat(node.value[0].(string), 32)
+	return float32(val), err
 }
 
 // Add adds a new KeyValue pair to an existing Key
@@ -232,4 +235,14 @@ func recursiveMerge(a *KeyValue, b *KeyValue, shouldReplace bool) (err error) {
 	}
 
 	return err
+}
+
+// NewKeyValuePair allows for manual creation of a single KeyValue pair.
+func NewKeyValuePair(key string, value interface{}, valueType ValueType) *KeyValue {
+	return &KeyValue{
+		key:       key,
+		valueType: valueType,
+		value:     []interface{}{value},
+		parent:    nil,
+	}
 }
