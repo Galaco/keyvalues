@@ -132,13 +132,14 @@ func TestKeyValue_AsString(t *testing.T) {
 }
 
 func TestKeyValue_AsInt(t *testing.T) {
-	value := int32(3456123)
+	expected := int32(3456123)
+	value := "3456123"
 	kv := KeyValue{
 		key:       "foo",
 		valueType: ValueInt,
 		value:     append(make([]interface{}, 0), value),
 	}
-	if val, err := kv.AsInt(); err != nil || val != value {
+	if val, err := kv.AsInt(); err != nil || val != expected {
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -148,11 +149,12 @@ func TestKeyValue_AsInt(t *testing.T) {
 }
 
 func TestKeyValue_AsFloat(t *testing.T) {
+	expected := "23424.1233123"
 	value := float32(23424.1233123)
 	kv := KeyValue{
 		key:       "foo",
 		valueType: ValueFloat,
-		value:     append(make([]interface{}, 0), value),
+		value:     append(make([]interface{}, 0), expected),
 	}
 	if val, err := kv.AsFloat(); err != nil || val != value {
 		if err != nil {

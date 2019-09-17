@@ -44,6 +44,11 @@ func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 
 	readScope(bufReader, &rootNode)
 
+	if rootNode.HasChildren() && len(rootNode.value) == 1 {
+		root := rootNode.value[0].(*KeyValue)
+		return *root,nil
+	}
+
 	return rootNode, err
 }
 
