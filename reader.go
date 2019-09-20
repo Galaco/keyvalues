@@ -106,25 +106,40 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 		}
 
 		// Read keyvalue & append to current scope
-		result := parseKV(line)
-		result.parent = scope
-		scope.value = append(scope.value, result)
+		results := parseKV(line)
+		for idx := range results {
+			results[idx].parent = scope
+			scope.value = append(scope.value, results[idx])
+		}
 	}
 
 	return scope
 }
 
 // parseKV reads a single line that should contain a KeyValue pair
-func parseKV(line string) *KeyValue {
+func parseKV(line string) (res []*KeyValue) {
 	prop := strings.Split(line, tokenSeparator)
 	// value also defined on this line
-	val := trim(strings.Replace(line, prop[0], "", -1))
+	vals := strings.Split(trim(strings.Replace(line, prop[0], "", -1)), "\r")
 
-	return &KeyValue{
+	res = append(res, &KeyValue{
 		key:       trim(prop[0]),
-		valueType: getType(val),
-		value:     append(make([]interface{}, 0), val),
+		valueType: getType(trim(vals[0])),
+		value:     append(make([]interface{}, 0), trim(vals[0])),
+	})
+
+	// Hack to catch \r carriage returns
+	if len(vals) == 2 {
+		prop := strings.Split(trim(vals[1]), tokenSeparator)
+		val2 := trim(strings.Replace(vals[1], prop[0], "", -1))
+		res = append(res, &KeyValue{
+			key:       strings.Replace(trim(prop[0]), "\"", "", -1),
+			valueType: getType(val2),
+			value:     append(make([]interface{}, 0), val2),
+		})
 	}
+
+	return res
 }
 
 func isCharacterEscaped(value string, char string) bool {
