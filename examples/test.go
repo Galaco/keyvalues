@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -15,7 +16,7 @@ func main() {
 
 // Vmt creates KeyValues for all files in vmt dir
 func Vmt() {
-	samplesDir := "./examples/vmt/"
+	samplesDir := "./vmt/"
 	fileInfos := getFilenames(samplesDir)
 	read(samplesDir, fileInfos, func(filename string, value *keyvalues.KeyValue) {
 		log.Println(value.Children())
@@ -24,7 +25,7 @@ func Vmt() {
 
 // Vmf creates KeyValues for all files in vmf dir
 func Vmf() {
-	samplesDir := "./examples/vmf/"
+	samplesDir := "./vmf/"
 	fileInfos := getFilenames(samplesDir)
 	read(samplesDir, fileInfos, func(filename string, value *keyvalues.KeyValue) {
 		log.Println(value.Children())
@@ -33,7 +34,7 @@ func Vmf() {
 
 // GameInfo creates KeyValues for all files in gameinfo dir
 func GameInfo() {
-	samplesDir := "./examples/gameinfo/"
+	samplesDir := "./gameinfo/"
 	fileInfos := getFilenames(samplesDir)
 	read(samplesDir, fileInfos, func(filename string, value *keyvalues.KeyValue) {
 		log.Println(value.Children())
@@ -42,6 +43,9 @@ func GameInfo() {
 
 func read(basePath string, fileInfos []os.FileInfo, callback func(filename string, value *keyvalues.KeyValue)) {
 	for _, info := range fileInfos {
+		if strings.HasPrefix(info.Name(), ".") {
+			continue
+		}
 		f, err := os.Open(basePath + info.Name())
 		if err != nil {
 			log.Fatal(err)
