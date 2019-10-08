@@ -46,7 +46,7 @@ func (reader *Reader) Read() (keyvalue KeyValue, err error) {
 
 	if rootNode.HasChildren() && len(rootNode.value) == 1 {
 		root := rootNode.value[0].(*KeyValue)
-		return *root,nil
+		return *root, nil
 	}
 
 	return rootNode, err
