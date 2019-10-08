@@ -69,7 +69,7 @@ func (node *KeyValue) HasChildren() bool {
 	return node.Type() == ValueArray
 }
 
-// GetChildren gets all node child values
+// Children gets all node child values
 // This is used for keys that contain 1 or more children as its value
 // rather than a basic type
 func (node *KeyValue) Children() (children []*KeyValue, err error) {
@@ -109,7 +109,7 @@ func (node *KeyValue) AsFloat() (float32, error) {
 	return float32(val), err
 }
 
-// Add adds a new KeyValue pair to an existing Key
+// AddChild adds a new KeyValue pair to an existing Key
 // Existing key's value must be an Array type
 func (node *KeyValue) AddChild(value *KeyValue) error {
 	if !node.HasChildren() {
