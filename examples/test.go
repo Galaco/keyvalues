@@ -52,6 +52,9 @@ func read(basePath string, fileInfos []os.FileInfo, callback func(filename strin
 		}
 		reader := keyvalues.NewReader(f)
 		kv, err := reader.Read()
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		callback(basePath+info.Name(), &kv)
 
