@@ -2,6 +2,7 @@ package keyvalues
 
 import (
 	"bufio"
+	"encoding/csv"
 	"io"
 	"strings"
 )
@@ -88,8 +89,11 @@ func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
 			break
 		}
 
-		// Read scope
-		prop := strings.Split(line, tokenSeparator)
+		// Read the scope, but parse it as CSV to remove the quotes and split in the correct place
+		// Without parsing it as a CSV, it will split on the first space, not the first unquoted space
+		r := csv.NewReader(strings.NewReader(line))
+		r.Comma = rune(tokenSeparator[0])
+		prop, err := r.Read()
 
 		// Only the key is defined here
 		// This *SHOULD* mean key has children
