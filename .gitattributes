@@ -1,0 +1,2 @@
+# Keep fixture bytes exact (BOMs, CRLF line endings).
+testdata/** -text

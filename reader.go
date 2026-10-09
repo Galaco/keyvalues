@@ -1,155 +1,157 @@
 package keyvalues
 
 import (
-	"bufio"
-	"encoding/csv"
+	"errors"
+	"fmt"
 	"io"
-	"strings"
 )
 
-const tokenEnterScope = "{"
-const tokenExitScope = "}"
-const tokenEscape = "\""
-const tokenDiscardCutset = "\t \r\n"
-const tokenSeparator = " "
-const tokenTab = "\t"
-const tokenComment = "//"
-const tokenRootNodeKey = "$root"
+// SyntaxError describes malformed KeyValues text.
+type SyntaxError struct {
+	Line   int // 1-based
+	Column int // 1-based, in characters
+	Msg    string
+}
 
-// Reader is used for parsing a KeyValue format stream
-// There are various KeyValue based formats (vmt, vmf, gameinfo.txt etc.)
-// This should be able to parse all of them.
+func (e *SyntaxError) Error() string {
+	return fmt.Sprintf("keyvalues: syntax error at line %d, column %d: %s", e.Line, e.Column, e.Msg)
+}
+
+func syntaxError(at token, format string, args ...interface{}) *SyntaxError {
+	return &SyntaxError{Line: at.line, Column: at.column, Msg: fmt.Sprintf(format, args...)}
+}
+
+// Reader parses KeyValues text. It handles any KeyValues based format, such as
+// gameinfo.txt, .vmt and .vmf files.
 type Reader struct {
-	file io.Reader
+	r       io.Reader
+	escapes bool
 }
 
-// NewReader Return a new Vmf Reader
-func NewReader(file io.Reader) Reader {
-	reader := Reader{}
-	reader.file = file
-	return reader
+// NewReader returns a Reader that parses r.
+func NewReader(r io.Reader) *Reader {
+	return &Reader{r: r}
 }
 
-// Read buffer file into our defined structures
-// Returns a fully mapped Vmf structure
-// Every root KeyValue is contained in a predefined root node, due to spec lacking clarity
-// about the number of valid root nodes. This assumes there can be more than 1
-func (reader *Reader) Read() (keyvalue KeyValue, err error) {
-	bufReader := bufio.NewReader(reader.file)
+// UseEscapeSequences makes the Reader decode escape sequences such as \n and
+// \" in quoted strings. By default backslashes are read literally, as the
+// engine does for most files.
+func (r *Reader) UseEscapeSequences() {
+	r.escapes = true
+}
 
-	rootNode := KeyValue{
-		key:       tokenRootNodeKey,
-		valueType: ValueArray,
-		parent:    nil,
+// Read parses all of the input. It returns a document root: a block with an
+// empty key whose children are the top-level nodes of the input.
+//
+// Input starting with a UTF-16 byte order mark, as localization files do, is
+// read as UTF-16. Anything else is read as UTF-8, and a UTF-8 byte order mark
+// is skipped. Unpaired UTF-16 surrogates are read as U+FFFD.
+//
+// Malformed input returns a *SyntaxError. Errors from the underlying reader
+// are returned as is.
+func (r *Reader) Read() (*KeyValue, error) {
+	s := newScanner(r.r, r.escapes)
+	doc, err := parse(s)
+	if errors.Is(err, errTruncatedUTF16) {
+		return nil, &SyntaxError{Line: s.line, Column: s.column, Msg: errTruncatedUTF16.Error()}
 	}
-
-	readScope(bufReader, &rootNode)
-
-	if rootNode.HasChildren() && len(rootNode.value) == 1 {
-		root := rootNode.value[0].(*KeyValue)
-		return *root, nil
-	}
-
-	return rootNode, err
+	return doc, err
 }
 
-// readScope Reads a single scope
-// Constructs a KeyValue node tree for a single scope
-// Recursively parses all child scopes too
-// Param: scope is the current scope to write to
-func readScope(reader *bufio.Reader, scope *KeyValue) *KeyValue {
+func parse(s *scanner) (*KeyValue, error) {
+	root := NewBlock("")
+
+	type openBlock struct {
+		node  *KeyValue
+		start token
+	}
+	var open []openBlock
+	current := root
+
 	for {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
+		t, err := s.next()
+		if err != nil {
+			return nil, err
 		}
-
-		// Remove any comments
-		line = strings.Split(line, tokenComment)[0]
-		// trim padding
-		line = strings.Trim(line, tokenDiscardCutset)
-		// Simplify parsing the line
-		line = strings.Replace(line, tokenTab, tokenSeparator, -1)
-
-		if len(line) == 0 {
-			continue
-		}
-
-		// New scope
-		if strings.Contains(line, tokenEnterScope) && !isCharacterEscaped(line, tokenEnterScope) {
-			// Scope is opened when the key is read
-			// There may be situations where there is no key, so we must account for that
-			subScope := scope.value[len(scope.value)-1].(*KeyValue)
-			scope.value = append(scope.value[:len(scope.value)-1], readScope(reader, subScope))
-			continue
-		}
-
-		// Exit scope
-		if strings.Contains(line, tokenExitScope) {
-			break
-		}
-
-		// Read the scope, but parse it as CSV to remove the quotes and split in the correct place
-		// Without parsing it as a CSV, it will split on the first space, not the first unquoted space
-		r := csv.NewReader(strings.NewReader(line))
-		r.Comma = rune(tokenSeparator[0])
-		prop, err := r.Read()
-
-		// Only the key is defined here
-		// This *SHOULD* mean key has children
-		if len(prop) == 1 {
-			//Create new scope
-			kv := &KeyValue{
-				key:       trim(prop[0]),
-				valueType: ValueArray,
-				parent:    scope,
+		switch t.kind {
+		case tokenEOF:
+			if len(open) > 0 {
+				b := open[len(open)-1]
+				return nil, syntaxError(b.start, "block %q is never closed", b.node.key)
 			}
-
-			scope.value = append(scope.value, kv)
-			continue
-		}
-
-		// Read keyvalue & append to current scope
-		results := parseKV(line)
-		for idx := range results {
-			results[idx].parent = scope
-			scope.value = append(scope.value, results[idx])
+			return root, nil
+		case tokenClose:
+			if len(open) == 0 {
+				return nil, syntaxError(t, "unexpected '}' with no open block")
+			}
+			closed := current
+			open = open[:len(open)-1]
+			current = closed.parent
+			if err := readTrailingCondition(s, closed); err != nil {
+				return nil, err
+			}
+		case tokenOpen:
+			return nil, syntaxError(t, "unexpected '{', expected a key")
+		case tokenConditional:
+			return nil, syntaxError(t, "unexpected conditional [%s], expected a key", t.text)
+		case tokenString:
+			node, err := readPair(s, t)
+			if err != nil {
+				return nil, err
+			}
+			current.appendChild(node)
+			if node.block {
+				open = append(open, openBlock{node: node, start: t})
+				current = node
+			}
 		}
 	}
-
-	return scope
 }
 
-// parseKV reads a single line that should contain a KeyValue pair
-func parseKV(line string) (res []*KeyValue) {
-	prop := strings.Split(line, tokenSeparator)
-	// value also defined on this line
-	vals := strings.Split(trim(strings.Replace(line, prop[0], "", -1)), "\r")
-
-	res = append(res, &KeyValue{
-		key:       trim(prop[0]),
-		valueType: getType(trim(vals[0])),
-		value:     append(make([]interface{}, 0), trim(vals[0])),
-	})
-
-	// Hack to catch \r carriage returns
-	if len(vals) == 2 {
-		prop := strings.Split(trim(vals[1]), tokenSeparator)
-		val2 := trim(strings.Replace(vals[1], prop[0], "", -1))
-		res = append(res, &KeyValue{
-			key:       strings.Replace(trim(prop[0]), "\"", "", -1),
-			valueType: getType(val2),
-			value:     append(make([]interface{}, 0), val2),
-		})
+// readPair reads what follows key: a value or the '{' opening a block,
+// optionally preceded by a conditional. For a leaf it also reads any
+// conditional after the value.
+func readPair(s *scanner, key token) (*KeyValue, error) {
+	node := &KeyValue{key: key.text}
+	t, err := s.next()
+	if err != nil {
+		return nil, err
 	}
-
-	return res
+	if t.kind == tokenConditional {
+		node.condition = t.text
+		if t, err = s.next(); err != nil {
+			return nil, err
+		}
+	}
+	switch t.kind {
+	case tokenEOF:
+		return nil, syntaxError(key, "key %q has no value", key.text)
+	case tokenClose:
+		return nil, syntaxError(t, "unexpected '}', expected a value for key %q", key.text)
+	case tokenConditional:
+		return nil, syntaxError(t, "unexpected conditional [%s], expected a value for key %q", t.text, key.text)
+	case tokenOpen:
+		node.block = true
+		return node, nil
+	}
+	node.value = t.text
+	if err := readTrailingCondition(s, node); err != nil {
+		return nil, err
+	}
+	return node, nil
 }
 
-func isCharacterEscaped(value string, char string) bool {
-	return strings.LastIndex(value, tokenEscape) >= strings.LastIndex(value, char)
-}
-
-func trim(value string) string {
-	return strings.Trim(strings.TrimSpace(value), tokenEscape)
+// readTrailingCondition attaches a conditional following node's value or
+// closing brace, if there is one.
+func readTrailingCondition(s *scanner, node *KeyValue) error {
+	t, err := s.peek()
+	if err != nil || t.kind != tokenConditional {
+		return err
+	}
+	if node.condition != "" {
+		return syntaxError(t, "key %q has more than one conditional", node.key)
+	}
+	node.condition = t.text
+	_, err = s.next()
+	return err
 }

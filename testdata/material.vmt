@@ -1,0 +1,23 @@
+﻿// Saved with a UTF-8 byte order mark and Windows line endings.
+LightmappedGeneric {
+	$basetexture "concrete\concretefloor001a"
+	$surfaceprop concrete
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[ .5 .5 .5 ]"
+	"$translucent" 1
+	"$alpha" ".75"
+	"$bumpmap" "concrete\concretefloor001a_normal" [$WIN32]
+	"Proxies"
+	{
+		"AnimatedTexture"
+		{
+			"animatedtexturevar" "$basetexture"
+			"animatedtextureframenumvar" "$frame"
+			"animatedtextureframerate" 30
+		}
+	}
+	">=dx90"
+	{
+		"$detail" "detail\noise_detail_01"
+	}
+}

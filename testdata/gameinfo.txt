@@ -1,0 +1,32 @@
+"GameInfo"
+{
+	game		"Counter-Strike Source"
+	title		"COUNTER-STRIKE'"
+	title2		"source"
+	type		multiplayer_only
+	nomodels	1
+	nohimodel	1
+	nocrosshair	0
+	bots		1
+	hidden_maps
+	{
+		"test_speakers"		1
+		"test_hardware"		1
+	}
+	SupportsDX8	1
+	developer	"Valve"
+	developer_url	"http://www.valvesoftware.com/"   // a URL, not a comment
+
+	FileSystem
+	{
+		SteamAppId		240	// mounts the base game content
+		ToolsAppId		211
+
+		SearchPaths
+		{
+			Game		|gameinfo_path|.
+			Game		cstrike
+			Game		hl2
+		}
+	}
+}

@@ -1,8 +1,6 @@
+.idea/
 
-\.idea/
-
-examples/gameinfo/gameinfo\.txt
-
-*.vmf
-
-*.vmt
+# Sample files dropped into examples/ for local experiments.
+examples/gameinfo/*.txt
+examples/vmf/*.vmf
+examples/vmt/*.vmt

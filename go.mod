@@ -1,3 +1,3 @@
-module github.com/galaco/KeyValues
+module github.com/galaco/KeyValues/v2
 
-go 1.13
+go 1.18
